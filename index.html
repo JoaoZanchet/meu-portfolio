@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>João Zanchet | Freelancer & Empreendedor</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+        }
+        .text-accent { color: #0011DF; }
+        .bg-card { background-color: #121212; border: 1px solid #222; }
+        
+        .orbit-container {
+            perspective: 1000px;
+        }
+        .center-glow {
+            filter: blur(60px);
+            opacity: 0.4;
+            transition: background-color 0.8s ease;
+        }
+        @keyframes bounce-short {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .animate-bounce-short {
+            animation: bounce-short 0.8s ease-in-out infinite;
+        }
+        input[type='range'] {
+            -webkit-appearance: none;
+            background: rgba(255,255,255,0.1);
+            height: 4px;
+            border-radius: 2px;
+        }
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #0011DF;
+            cursor: pointer;
+            border: 2px solid #000;
+            transition: transform 0.2s;
+        }
+        
+        .orbit-item {
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease;
+            will-change: transform;
+        }
+        [x-cloak] { display: none !important; }
+
+        /* Estilos do Card 3D Limpo */
+        #canvas-container {
+            width: 100%;
+            height: 500px; 
+            cursor: grab;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        #canvas-container:active { cursor: grabbing; }
+        .btn-upload {
+            padding: 8px 12px;
+            background: #0011DF;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 10px;
+            font-weight: bold;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            display: inline-block;
+            border: 1px solid transparent;
+        }
+        .btn-upload:hover { 
+            background: #000bb3; 
+            box-shadow: 0 0 15px rgba(0, 17, 223, 0.4);
+        }
+        input[type="file"] { display: none; }
+
+        /* --- ESTILOS DA GALERIA DE PROJETOS (LEQUE) --- */
+        :root {
+            /* Cor alterada para o azul solicitado */
+            --proj-accent: #0011DF;
+        }
+
+        .gallery-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 1000px;
+            padding: 60px 20px;
+            min-height: 600px;
+        }
+
+        .cards-wrapper {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 1000px;
+            height: 400px;
+        }
+
+        .card-proj {
+            position: absolute;
+            width: 260px;
+            height: 380px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #1a1a1a;
+            transform-origin: center center;
+            z-index: 1;
+        }
+
+        .card-proj img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s, filter 0.6s;
+        }
+
+        .card-content-proj {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            padding: 25px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.95) 70%);
+            transform: translateY(120px);
+            opacity: 0;
+            transition: all 0.4s ease-out;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Posicionamento inicial */
+        .card-proj:nth-child(1) { transform: rotate(-12deg) translateX(-40px); }
+        .card-proj:nth-child(2) { transform: rotate(-6deg) translateX(-20px); }
+        .card-proj:nth-child(3) { transform: rotate(0deg) translateX(0px); }
+        .card-proj:nth-child(4) { transform: rotate(6deg) translateX(20px); }
+        .card-proj:nth-child(5) { transform: rotate(12deg) translateX(40px); }
+
+        /* Expansão do Leque */
+        .cards-wrapper:hover .card-proj:nth-child(1) { transform: rotate(-12deg) translateX(-340px); }
+        .cards-wrapper:hover .card-proj:nth-child(2) { transform: rotate(-6deg) translateX(-170px); }
+        .cards-wrapper:hover .card-proj:nth-child(3) { transform: rotate(0deg) translateX(0); }
+        .cards-wrapper:hover .card-proj:nth-child(4) { transform: rotate(6deg) translateX(170px); }
+        .cards-wrapper:hover .card-proj:nth-child(5) { transform: rotate(12deg) translateX(340px); }
+
+        .cards-wrapper:hover .card-proj:hover {
+            z-index: 100 !important;
+            border-color: var(--proj-accent);
+            box-shadow: 0 0 40px rgba(0, 17, 223, 0.4);
+        }
+
+        .card-proj:hover .card-content-proj {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .card-proj:hover img {
+            transform: scale(1.1);
+            filter: brightness(0.4);
+        }
+
+        .cards-wrapper:hover .card-proj:nth-child(1):hover { transform: rotate(-12deg) translateX(-340px) scale(1.1); }
+        .cards-wrapper:hover .card-proj:nth-child(2):hover { transform: rotate(-6deg) translateX(-170px) scale(1.1); }
+        .cards-wrapper:hover .card-proj:nth-child(3):hover { transform: rotate(0deg) translateX(0) scale(1.1); }
+        .cards-wrapper:hover .card-proj:nth-child(4):hover { transform: rotate(6deg) translateX(170px) scale(1.1); }
+        .cards-wrapper:hover .card-proj:nth-child(5):hover { transform: rotate(12deg) translateX(340px) scale(1.1); }
+
+        .btn-view-proj {
+            background-color: var(--proj-accent);
+            color: white;
+            font-weight: bold;
+            padding: 10px 16px;
+            border-radius: 8px;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+            display: inline-block;
+            text-align: center;
+            text-decoration: none;
+            position: relative;
+            z-index: 20;
+        }
+
+        .btn-view-proj:hover {
+            background-color: white;
+            color: #0011DF;
+            transform: scale(1.05);
+        }
+
+        @media (max-width: 800px) {
+            .gallery-container { min-height: 450px; }
+            .card-proj { width: 160px; height: 240px; }
+            .cards-wrapper { height: 300px; }
+            .cards-wrapper:hover .card-proj:nth-child(1) { transform: rotate(-12deg) translateX(-140px); }
+            .cards-wrapper:hover .card-proj:nth-child(2) { transform: rotate(-6deg) translateX(-70px); }
+            .cards-wrapper:hover .card-proj:nth-child(4) { transform: rotate(6deg) translateX(70px); }
+            .cards-wrapper:hover .card-proj:nth-child(5) { transform: rotate(12deg) translateX(140px); }
+            .card-content-proj p { display: none; }
+            .card-content-proj h3 { font-size: 0.875rem; }
+        }
+    </style>
+
+    <script>
+        window.portfolioApp = function() {
+            const icons = {
+                lovable: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`,
+                gemini: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>`,
+                manychat: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>`,
+                clickmax: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>`,
+                nuvem: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>`,
+                converza: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>`,
+                furion: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>`,
+                studio: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a2 2 0 00-1.96 1.414l-.477 2.387a2 2 0 00.547 1.022l1.414 1.414a2 2 0 001.022.547l2.387.477a2 2 0 001.96-1.414l.477-2.387a2 2 0 00-.547-1.022l-1.414-1.414zM10 10V4M10 4L7 7M10 4l3 3M4 10h16"/></svg>`,
+                config: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>`
+            };
+
+            return {
+                orbitalIcons: [
+                    { id: 0, name: 'Stack', color: 'text-blue-400', bg: 'bg-blue-500/10', svg: icons.config, frozenAngle: null },
+                    { id: 1, name: 'Lovable', color: 'text-pink-500', bg: 'bg-pink-500/10', svg: icons.lovable, frozenAngle: null },
+                    { id: 2, name: 'Gemini AI', color: 'text-orange-500', bg: 'bg-orange-500/10', svg: icons.gemini, frozenAngle: null },
+                    { id: 3, name: 'Manychat', color: 'text-yellow-400', bg: 'bg-yellow-400/10', svg: icons.manychat, frozenAngle: null },
+                    { id: 4, name: 'Clickmax', color: 'text-purple-400', bg: 'bg-purple-400/10', svg: icons.clickmax, frozenAngle: null },
+                    { id: 5, name: 'Nuvemshop', color: 'text-red-500', bg: 'bg-red-500/10', svg: icons.nuvem, frozenAngle: null },
+                    { id: 6, name: 'Converza', color: 'text-cyan-400', bg: 'bg-cyan-400/10', svg: icons.converza, frozenAngle: null },
+                    { id: 7, name: 'Furion', color: 'text-amber-400', bg: 'bg-amber-400/10', svg: icons.furion, frozenAngle: null },
+                    { id: 8, name: 'AI Studio', color: 'text-emerald-400', bg: 'bg-emerald-400/10', svg: icons.studio, frozenAngle: null }
+                ],
+                centerIcon: { id: 9, name: 'Explorar', color: 'text-zinc-500', bg: 'bg-zinc-500/5', svg: `<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>` },
+                
+                rotation: 0,
+                speedInput: 23,
+                radius: window.innerWidth < 768 ? 120 : 180,
+                isManualPause: false,
+                isSwapping: false,
+                hoveredIndex: null,
+                
+                init() {
+                    let lastTime = performance.now();
+                    const animate = (time) => {
+                        const deltaTime = time - lastTime;
+                        lastTime = time;
+
+                        if (!this.isManualPause && !this.isSwapping) {
+                            const multiplier = this.speedInput / 100;
+                            this.rotation += (multiplier * deltaTime * 0.05);
+                        }
+                        requestAnimationFrame(animate);
+                    };
+                    requestAnimationFrame(animate);
+
+                    window.addEventListener('resize', () => {
+                        this.radius = window.innerWidth < 768 ? 120 : 180;
+                    });
+                },
+
+                handleMouseEnter(i) {
+                    this.hoveredIndex = i;
+                    const total = this.orbitalIcons.length;
+                    this.orbitalIcons[i].frozenAngle = (i * 360 / total) + this.rotation;
+                },
+
+                handleMouseLeave(i) {
+                    this.hoveredIndex = null;
+                    this.orbitalIcons[i].frozenAngle = null;
+                },
+
+                getOrbitStyle(i) {
+                    const total = this.orbitalIcons.length;
+                    
+                    if (this.isSwapping && this.hoveredIndex === i) {
+                        return { 
+                            opacity: 0, 
+                            transform: 'scale(0.5) translate(0,0)',
+                            transition: 'all 0.4s ease-in'
+                        };
+                    }
+
+                    const currentAngle = this.orbitalIcons[i].frozenAngle !== null 
+                        ? this.orbitalIcons[i].frozenAngle 
+                        : (i * 360 / total) + this.rotation;
+
+                    return {
+                        transform: `rotate(${currentAngle}deg) translateY(-${this.radius}px) rotate(-${currentAngle}deg)`,
+                        zIndex: this.hoveredIndex === i ? 50 : 20,
+                        opacity: 1
+                    };
+                },
+
+                swapIcons(index) {
+                    if (this.isSwapping) return;
+                    this.isSwapping = true;
+                    this.hoveredIndex = index;
+                    
+                    setTimeout(() => {
+                        const clickedIcon = { ...this.orbitalIcons[index] };
+                        const currentCenter = { ...this.centerIcon };
+                        
+                        currentCenter.frozenAngle = null;
+                        this.centerIcon = clickedIcon;
+                        this.orbitalIcons[index] = currentCenter;
+                        
+                        this.isSwapping = false;
+                        this.hoveredIndex = null;
+                    }, 400);
+                }
+            };
+        };
+    </script>
+    <!-- Alpine.js -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="antialiased" x-data="portfolioApp()" x-cloak>
+
+    <!-- Header -->
+    <header class="flex justify-between items-center px-6 py-8 md:px-16 relative z-50">
+        <div class="text-xl font-black tracking-tighter">
+            JoãoZanchet<span class="text-accent">.Freelancer</span>
+        </div>
+        <nav class="hidden md:flex space-x-8 text-sm font-medium text-gray-400">
+            <a href="#" class="hover:text-white transition">Home</a>
+            <a href="#sobre" class="hover:text-white transition">Sobre Mim</a>
+            <a href="#habilidades" class="hover:text-white transition">Habilidades</a>
+            <a href="#projetos" class="hover:text-white transition">Projetos</a>
+            <a href="#contato" class="hover:text-white transition">Contato</a>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="px-6 md:px-16 pt-12 md:pt-24 max-w-5xl">
+        <p class="font-mono text-lg mb-2">Prazer(); Eu sou</p>
+        <h1 class="text-5xl md:text-7xl font-black text-accent mb-4">João Zanchet</h1>
+        <h2 class="text-2xl md:text-4xl font-bold mb-8 text-white">
+            <span class="border-b-4 border-accent">Microempreendedor | Freelancer</span>
+        </h2>
+        <p class="text-gray-400 text-lg md:text-xl max-w-2xl mb-6 italic">
+            "Minha bio é simples: Eu uno design estratégico à automação multicanal."
+        </p>
+    </section>
+
+    <!-- Sobre Mim (Visualizador 3D) -->
+    <section id="sobre" class="px-6 md:px-16 py-20 grid md:grid-cols-2 gap-12 items-center">
+        <div>
+            <h2 class="text-3xl font-black text-accent mb-6 uppercase tracking-widest">Sobre Mim</h2>
+            <p class="text-gray-300 text-lg leading-relaxed mb-6">
+                Como empreendedor de coração, acredito que a tecnologia deve trabalhar para o seu negócio. Minha bio é simples: <strong>Eu uno design estratégico à automação multicanal.</strong>
+            </p>
+            <p class="text-gray-300 text-lg leading-relaxed mb-8">
+                Eu não crio apenas sites; eu construo ecossistemas digitais que operam de forma inteligente, capturando leads e convertendo clientes enquanto você foca no que realmente importa.
+            </p>
+            
+            <div class="flex flex-wrap gap-4 items-center">
+                <label class="btn-upload">
+                    Carregar Frente
+                    <input type="file" id="upload-front" accept="image/*">
+                </label>
+                <label class="btn-upload">
+                    Carregar Verso
+                    <input type="file" id="upload-back" accept="image/*">
+                </label>
+                <p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">
+                    Arraste para girar em 3D
+                </p>
+            </div>
+        </div>
+        
+        <div class="relative min-h-[500px] flex items-center justify-center">
+            <div id="canvas-container"></div>
+        </div>
+    </section>
+
+    <!-- Habilidades (Órbita) -->
+    <section id="habilidades" class="relative min-h-[850px] flex flex-col items-center justify-center py-24 bg-zinc-950/30 overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full center-glow"
+                 :class="centerIcon.bg ? centerIcon.bg.split('/')[0] : 'bg-blue-900/20'"></div>
+        </div>
+
+        <div class="z-20 mb-16 text-center px-6">
+            <h2 class="text-4xl font-black tracking-tighter uppercase mb-3">Minhas Ferramentas</h2>
+            <p class="text-gray-500 text-[10px] font-bold tracking-[0.4em] uppercase opacity-60">
+                Clique nos ícones da órbita para trocá-los com o centro
+            </p>
+        </div>
+
+        <div class="relative flex items-center justify-center w-[300px] h-[300px] md:w-[500px] md:h-[500px] orbit-container">
+            <div class="absolute border border-white/5 rounded-full transition-all duration-700 ease-out" 
+                 :style="`width: ${radius * 2}px; height: ${radius * 2}px`"
+                 :class="hoveredIndex !== null ? 'border-white/20 scale-105' : ''"></div>
+
+            <!-- ÍCONE CENTRAL -->
+            <div class="z-30 relative transition-all duration-500 ease-in-out"
+                 :class="isSwapping ? 'scale-75 blur-sm opacity-50' : 'scale-100 opacity-100'">
+                <div class="absolute inset-0 rounded-[2.5rem] blur-3xl opacity-30 animate-pulse" :class="centerIcon.bg"></div>
+                <div class="relative p-7 md:p-9 bg-zinc-900/80 backdrop-blur-3xl rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden group">
+                    <div x-html="centerIcon.svg" class="w-14 h-14 md:w-20 md:h-20 transition-transform duration-500" 
+                         :class="centerIcon.color"
+                         style="filter: drop-shadow(0 0 15px currentColor);"></div>
+                </div>
+                <div class="absolute -bottom-14 left-1/2 -translate-x-1/2 whitespace-nowrap text-center">
+                    <span class="text-accent font-black tracking-[0.2em] uppercase text-xs" x-text="centerIcon.name"></span>
+                </div>
+            </div>
+
+            <!-- ÍCONES ORBITAIS -->
+            <template x-for="(item, i) in orbitalIcons" :key="item.id">
+                <div class="absolute flex items-center justify-center orbit-item"
+                     :style="getOrbitStyle(i)"
+                     @mouseenter="handleMouseEnter(i)"
+                     @mouseleave="handleMouseLeave(i)"
+                     @click="swapIcons(i)">
+                    
+                    <div class="relative p-3 md:p-4 rounded-2xl backdrop-blur-xl border border-white/10 transition-all duration-300 cursor-pointer shadow-xl group"
+                         :class="[
+                            item.bg, 
+                            hoveredIndex === i ? 'border-white/40 scale-125 ring-4 ring-white/5' : 'hover:border-white/20'
+                         ]">
+                        <div x-html="item.svg" class="w-6 h-6 md:w-8 md:h-8 transition-all duration-300" 
+                             :class="[item.color, hoveredIndex === i ? 'animate-bounce-short' : 'opacity-80 group-hover:opacity-100']"></div>
+                        <div class="absolute -bottom-12 left-1/2 -translate-x-1/2 bg-white text-black text-[10px] font-black px-3 py-1.5 rounded-full transition-all duration-300 uppercase whitespace-nowrap shadow-lg pointer-events-none"
+                             :class="hoveredIndex === i ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-2 scale-50'">
+                            <span x-text="item.name"></span>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <div class="z-40 mt-24 flex items-center gap-8 px-10 py-5 bg-zinc-900/50 backdrop-blur-2xl border border-white/5 rounded-full">
+            <button @click="isManualPause = !isManualPause" 
+                    class="p-4 rounded-full transition-all duration-300 hover:scale-110 active:scale-95"
+                    :class="isManualPause ? 'bg-accent text-white shadow-[0_0_20px_rgba(0,17,223,0.4)]' : 'bg-white/5 text-gray-500 hover:text-white'">
+                <template x-if="isManualPause"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></template>
+                <template x-if="!isManualPause"><svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></template>
+            </button>
+            <div class="h-10 w-px bg-white/10"></div>
+            <div class="flex flex-col gap-2">
+                <div class="flex justify-between items-center">
+                    <span class="text-[9px] font-black text-gray-500 uppercase tracking-widest">Velocidade</span>
+                    <span class="text-[10px] font-mono text-accent" x-text="speedInput"></span>
+                </div>
+                <input type="range" min="5" max="50" x-model="speedInput" class="w-32 md:w-48 cursor-pointer">
+            </div>
+        </div>
+    </section>
+
+    <!-- Meus Projetos (Versão Leque Solicitada) -->
+    <section id="projetos" class="py-24 bg-black overflow-hidden">
+        <div class="max-w-6xl mx-auto px-6 mb-12">
+             <h2 class="text-4xl md:text-5xl font-black uppercase tracking-tighter text-center md:text-left<span class=text-[#0011DF] font-bold>">Meus Projetos</h2>
+        </div>
+
+        <div class="gallery-container">
+            <div class="cards-wrapper">
+                
+                <!-- PROJETO 1 -->
+                <div class="card-proj">
+                    <img src="https://i.imgur.com/YGAi7cU.jpg" alt="Projeto 1">
+                    <div class="card-content-proj">
+                        <h3 class="font-bold text-lg">BV Confecções</h3>
+                        <p class="text-xs text-gray-300">Explora a previa do site da BV.</p>
+                        <a href="https://preview--bvconfeccoespontepreta.lovable.app/" target="_blank" class="btn-view-proj">Ver Projeto</a>
+                    </div>
+                </div>
+
+                <!-- PROJETO 2 -->
+                <div class="card-proj">
+                    <img src="https://i.imgur.com/K20Wscq.jpg" alt="Projeto 2">
+                    <div class="card-content-proj">
+                        <h3 class="font-bold text-lg">Sublime</h3>
+                        <p class="text-xs text-gray-300">Explore o projeto sublime, 'este e um dos projetos teste'.</p>
+                        <a href="https://id-preview--6ede901d-3fb8-468f-bc9c-2499cb70b302.lovable.app/" target="_blank" class="btn-view-proj">Explorar</a>
+                    </div>
+                </div>
+
+                <!-- PROJETO 3 -->
+                <div class="card-proj">
+                    <img src="https://i.imgur.com/OY4FmWh.jpg" alt="Projeto 3">
+                    <div class="card-content-proj">
+                        <h3 class="font-bold text-lg">Zanchet Digital</h3>
+                        <p class="text-xs text-gray-300">Explore o meu antigo Site.</p>
+                        <a href="https://preview--zanchetdigital.lovable.app/" target="_blank" class="btn-view-proj">Aceder</a>
+                    </div>
+                </div>
+
+                <!-- PROJETO 4 -->
+                <div class="card-proj">
+                    <img src="https://i.imgur.com/l4luo2C.jpg" alt="Projeto 4">
+                    <div class="card-content-proj">
+                        <h3 class="font-bold text-lg">AgroBagual</h3>
+                        <p class="text-xs text-gray-300">Acompanhe o desnvolvimento do site do AgroBagual.</p>
+                        <a href="https://id-preview--d23cb83b-ad18-44f1-83bd-3fa04ea72147.lovable.app/" target="_blank" class="btn-view-proj">Abrir App</a>
+                    </div>
+                </div>
+
+                <!-- PROJETO 5 -->
+                <div class="card-proj">
+                    <img src="https://i.imgur.com/bDqvuMI.jpg" alt="Projeto 5">
+                    <div class="card-content-proj">
+                        <h3 class="font-bold text-lg">Páscoa Mágica</h3>
+                        <p class="text-xs text-gray-300">Veja o meu projeto esboço para a Páscoa.</p>
+                        <a href="https://id-preview--5d6e5a26-5818-4720-b2ee-166a2c7c9b26.lovable.app/" target="_blank" class="btn-view-proj">Ver Mais</a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="text-center mt-12 text-xl font-light">
+            Explore os meus <span class="text-[#0011DF] font-bold">Projetos</span>
+        </div>
+    </section>
+
+    <!-- Contato -->
+    <section id="contato" class="px-6 md:px-16 py-32 border-t border-zinc-900">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-4xl md:text-5xl font-black mb-12 leading-tight text-center md:text-left">Vamos construir algo <span class="text-accent">relevante</span> juntos?</h2>
+            <div class="bg-card p-8 md:p-12 rounded-[3rem] border border-accent/10 relative overflow-hidden">
+                <form class="space-y-6 relative z-10" onsubmit="event.preventDefault(); enviarWhatsApp();">
+                    <div class="grid md:grid-cols-2 gap-6">
+                        <div class="space-y-2">
+                            <label class="text-[10px] uppercase font-black text-gray-500 tracking-widest">Seu Nome</label>
+                            <input type="text" id="nome" placeholder="Ex: João Silva" class="w-full p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800 focus:border-accent outline-none text-white" required>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="text-[10px] uppercase font-black text-gray-500 tracking-widest">Seu WhatsApp</label>
+                            <input type="text" id="whatsapp" placeholder="(00) 00000-0000" class="w-full p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800 focus:border-accent outline-none text-white" required>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="text-[10px] uppercase font-black text-gray-500 tracking-widest">Serviço de Interesse</label>
+                        <select id="interesse" class="w-full p-5 rounded-2xl bg-zinc-900/50 border border-zinc-800 focus:border-accent outline-none text-white appearance-none" required>
+                            <option value="" disabled selected>Selecione uma opção...</option>
+                            <option value="Site Institucional">Site Institucional</option>
+                            <option value="Landing Page">Landing Page</option>
+                            <option value="Loja Virtual">Loja Virtual</option>
+                            <option value="Automação WhatsApp">Automação WhatsApp</option>
+                        </select>
+                    </div>
+                    <div class="grid md:grid-cols-2 gap-4 pt-4">
+                        <button type="submit" class="w-full py-5 bg-accent text-white font-black uppercase tracking-widest rounded-2xl hover:scale-[1.02] transition-all shadow-xl shadow-accent/20">Solicitar Orçamento</button>
+                        <a href="https://wa.me/5554991976538" target="_blank" class="w-full flex items-center justify-center gap-3 py-5 bg-[#25d366] text-white rounded-2xl font-black uppercase tracking-widest text-xs hover:scale-[1.02] transition-all">Falar no WhatsApp</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer class="px-6 py-16 text-center border-t border-zinc-900">
+        <div class="mb-8 font-black tracking-tighter text-xl">JZ<span class="text-accent">.</span></div>
+        <p class="text-gray-600 text-[10px] uppercase tracking-[0.5em]">© 2024 João Zanchet — Estratégia & Automação.</p>
+    </footer>
+
+    <script>
+        let scene, camera, renderer, card;
+        let isDragging = false;
+        let previousMouseX = 0, previousMouseY = 0, velocityX = 0, velocityY = 0;
+        const friction = 0.95;
+
+        function initCard() {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 6;
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+            scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+            
+            const geometry = new THREE.BoxGeometry(2.4, 3.4, 0.08);
+            const mats = [
+                new THREE.MeshBasicMaterial({ color: 0x111111 }),
+                new THREE.MeshBasicMaterial({ color: 0x111111 }),
+                new THREE.MeshBasicMaterial({ color: 0x111111 }),
+                new THREE.MeshBasicMaterial({ color: 0x111111 }),
+                new THREE.MeshBasicMaterial({ color: 0x1a1a1a }),
+                new THREE.MeshBasicMaterial({ color: 0x1a1a1a })
+            ];
+            card = new THREE.Mesh(geometry, mats);
+            card.rotation.y = 0.5; card.rotation.x = 0.2;
+            scene.add(card);
+            setupCardInteractions(container);
+            setupCardUploads();
+            animateCard();
+        }
+
+        function setupCardUploads() {
+            const loader = new THREE.TextureLoader();
+            document.getElementById('upload-front').addEventListener('change', (e) => {
+                const url = URL.createObjectURL(e.target.files[0]);
+                loader.load(url, t => card.material[4] = new THREE.MeshBasicMaterial({ map: t, transparent: true }));
+            });
+            document.getElementById('upload-back').addEventListener('change', (e) => {
+                const url = URL.createObjectURL(e.target.files[0]);
+                loader.load(url, t => { t.center.set(0.5, 0.5); t.repeat.set(-1, 1); card.material[5] = new THREE.MeshBasicMaterial({ map: t, transparent: true }); });
+            });
+        }
+
+        function setupCardInteractions(container) {
+            const onStart = (x, y) => { isDragging = true; velocityX = 0; velocityY = 0; previousMouseX = x; previousMouseY = y; };
+            const onMove = (x, y) => { if (!isDragging || !card) return; const dx = x - previousMouseX, dy = y - previousMouseY; velocityX = dx * 0.015; velocityY = dy * 0.015; card.rotation.y += velocityX; card.rotation.x += velocityY; previousMouseX = x; previousMouseY = y; };
+            container.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
+            window.addEventListener('mouseup', () => isDragging = false);
+            window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+            container.addEventListener('touchstart', (e) => e.touches.length > 0 && onStart(e.touches[0].clientX, e.touches[0].clientY), {passive: true});
+            container.addEventListener('touchend', () => isDragging = false);
+            container.addEventListener('touchmove', (e) => e.touches.length > 0 && onMove(e.touches[0].clientX, e.touches[0].clientY), {passive: true});
+        }
+
+        function animateCard() {
+            requestAnimationFrame(animateCard);
+            if (!isDragging && card) {
+                card.rotation.y += velocityX; card.rotation.x += velocityY;
+                velocityX *= friction; velocityY *= friction;
+                if (Math.abs(velocityX) < 0.001) card.rotation.y += 0.004;
+                card.rotation.x *= 0.98;
+            }
+            renderer.render(scene, camera);
+        }
+
+        function enviarWhatsApp() {
+            const msg = `Olá João!%0A*Nome:* ${document.getElementById('nome').value}%0A*Interesse:* ${document.getElementById('interesse').value}`;
+            window.open(`https://wa.me/5554991976538?text=${msg}`, '_blank');
+        }
+
+        window.addEventListener('load', initCard);
+    </script>
+</body>
+</html>
