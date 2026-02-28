@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>João Zanchet | Freelancer & Empreendedor</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Biblioteca de Confetes -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .text-accent { color: #0011DF; }
+        .bg-card { background-color: #121212; border: 1px solid #222; }
+        
+        /* HEADER FIXO COM BLUR */
+        .header-fixed {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            background-color: rgba(0, 0, 0, 0.7);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        /* ESTILOS DOS BOTÕES NEON (SNAKE BORDER) */
+        .magic-btn-container {
+            position: relative;
+            background: #1a1a1a; 
+            border-radius: 1rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            overflow: hidden;
+            transition: transform 0.1s ease, box-shadow 0.3s ease;
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1); 
+            user-select: none;
+        }
+
+        .magic-btn-container:active { transform: scale(0.95); }
+
+        .moving-border {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 300%; 
+            height: 300%;
+            transform: translate(-50%, -50%);
+            animation: rotate-border 4s linear infinite;
+            z-index: 0;
+        }
+
+        /* Versão Azul (Padrão) */
+        .border-blue {
+            background: conic-gradient(
+                transparent 70%, 
+                #4c58f0 85%, 
+                #0011DF 95%, 
+                transparent 100%
+            );
+        }
+
+        /* Versão Verde (WhatsApp) */
+        .border-green {
+            background: conic-gradient(
+                transparent 70%, 
+                #4ade80 85%, 
+                #25d366 95%, 
+                transparent 100%
+            );
+        }
+
+        .btn-inner-neon {
+            position: absolute;
+            inset: 2px; 
+            background-color: #050505; 
+            border-radius: 0.9rem;
+            z-index: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background-color 0.4s ease;
+        }
+
+        .magic-btn-container:hover {
+            box-shadow: 0 0 25px rgba(0, 17, 223, 0.4);
+        }
+
+        .magic-btn-container.whatsapp-magic:hover {
+            box-shadow: 0 0 25px rgba(37, 211, 102, 0.4);
+        }
+
+        .magic-btn-container:hover .moving-border {
+            animation-duration: 1.5s;
+        }
+
+        .magic-btn-container:hover .btn-inner-neon.inner-blue {
+            background-color: #0011DF;
+        }
+
+        .magic-btn-container:hover .btn-inner-neon.inner-green {
+            background-color: #25d366;
+        }
+
+        @keyframes rotate-border {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        /* Orbit e Efeitos Gerais */
+        .orbit-container { perspective: 1000px; }
+        .center-glow { filter: blur(60px); opacity: 0.4; transition: background-color 0.8s ease; will-change: background-color; }
+        @keyframes bounce-short { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+        .animate-bounce-short { animation: bounce-short 0.8s ease-in-out infinite; }
+        
+        input[type='range'] {
+            -webkit-appearance: none; background: rgba(255,255,255,0.1); height: 4px; border-radius: 2px;
+        }
+        input[type='range']::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%; background: #0011DF; cursor: pointer; border: 2px solid #000;
+        }
+        
+        .orbit-item { transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.4s ease; will-change: transform, opacity; }
+        [x-cloak] { display: none !important; }
+
+        #canvas-container { width: 100%; height: 400px; cursor: grab; display: flex; justify-content: center; align-items: center; position: relative; }
+        @media (min-width: 768px) { #canvas-container { height: 500px; } }
+
+        /* GALERIA LEQUE DE PROJETOS */
+        :root { --proj-accent: #0011DF; }
+        .gallery-container { display: flex; justify-content: center; align-items: center; perspective: 1000px; padding: 40px 10px; min-height: 500px; }
+        .cards-wrapper { position: relative; display: flex; justify-content: center; align-items: center; width: 100%; max-width: 1000px; height: 400px; }
+        
+        .card-proj { 
+            position: absolute; 
+            width: 250px; 
+            height: 380px; 
+            border-radius: 20px; 
+            overflow: hidden; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6); 
+            transition: all 0.6s cubic-bezier(0.25, 1, 0.5, 1); 
+            border: 1px solid rgba(255, 255, 255, 0.1); 
+            background: #1a1a1a; 
+            transform-origin: bottom center;
+            cursor: pointer;
+        }
+
+        .card-proj img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s, filter 0.6s; }
+        
+        /* Posições iniciais (empilhadas) */
+        .card-proj:nth-child(1) { transform: rotate(-10deg) translateX(-40px); z-index: 1; }
+        .card-proj:nth-child(2) { transform: rotate(-5deg) translateX(-20px); z-index: 2; }
+        .card-proj:nth-child(3) { transform: rotate(0deg); z-index: 3; }
+        .card-proj:nth-child(4) { transform: rotate(5deg) translateX(20px); z-index: 2; }
+        .card-proj:nth-child(5) { transform: rotate(10deg) translateX(40px); z-index: 1; }
+
+        /* Efeito de expansão do leque no hover do container */
+        .cards-wrapper:hover .card-proj:nth-child(1) { transform: rotate(-25deg) translateX(-280px); }
+        .cards-wrapper:hover .card-proj:nth-child(2) { transform: rotate(-12deg) translateX(-140px); }
+        .cards-wrapper:hover .card-proj:nth-child(3) { transform: rotate(0deg) translateY(-20px) scale(1.05); z-index: 10; }
+        .cards-wrapper:hover .card-proj:nth-child(4) { transform: rotate(12deg) translateX(140px); }
+        .cards-wrapper:hover .card-proj:nth-child(5) { transform: rotate(25deg) translateX(280px); }
+
+        .card-content-proj { 
+            position: absolute; 
+            bottom: 0; 
+            left: 0; 
+            width: 100%; 
+            padding: 24px; 
+            background: linear-gradient(transparent, rgba(0,0,0,0.95) 70%); 
+            transform: translateY(100px); 
+            opacity: 0; 
+            transition: all 0.4s ease-out; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 12px; 
+            z-index: 15;
+        }
+        
+        .card-proj:hover .card-content-proj { transform: translateY(0); opacity: 1; }
+        .card-proj:hover img { filter: brightness(0.3) blur(2px); }
+        .btn-view-proj { background-color: var(--proj-accent); color: white; font-weight: bold; padding: 12px; border-radius: 10px; text-transform: uppercase; font-size: 0.7rem; text-align: center; letter-spacing: 1px; }
+
+        @media (max-width: 768px) {
+            .card-proj { width: 150px; height: 230px; }
+            .cards-wrapper { height: 300px; }
+            .cards-wrapper:hover .card-proj:nth-child(1) { transform: rotate(-20deg) translateX(-130px); }
+            .cards-wrapper:hover .card-proj:nth-child(2) { transform: rotate(-10deg) translateX(-65px); }
+            .cards-wrapper:hover .card-proj:nth-child(4) { transform: rotate(10deg) translateX(65px); }
+            .cards-wrapper:hover .card-proj:nth-child(5) { transform: rotate(20deg) translateX(130px); }
+        }
+    </style>
+
+    <script>
+        window.portfolioApp = function() {
+            const icons = {
+                lovable: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`,
+                gemini: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>`,
+                manychat: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>`,
+                clickmax: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5"/></svg>`,
+                nuvem: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>`,
+                converza: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4"/></svg>`,
+                furion: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"/></svg>`,
+                studio: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a2 2 0 00-1.96 1.414l-.477 2.387a2 2 0 00.547 1.022l1.414 1.414a2 2 0 001.022.547l2.387.477a2 2 0 001.96-1.414l.477-2.387a2 2 0 00-.547-1.022l-1.414-1.414zM10 10V4M10 4L7 7M10 4l3 3M4 10h16"/></svg>`,
+                config: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/></svg>`
+            };
+
+            return {
+                orbitalIcons: [
+                    { id: 0, name: 'Stack', color: 'text-blue-400', bg: 'bg-blue-500/10', svg: icons.config, frozenAngle: null },
+                    { id: 1, name: 'Lovable', color: 'text-pink-500', bg: 'bg-pink-500/10', svg: icons.lovable, frozenAngle: null },
+                    { id: 2, name: 'Gemini AI', color: 'text-orange-500', bg: 'bg-orange-500/10', svg: icons.gemini, frozenAngle: null },
+                    { id: 3, name: 'Manychat', color: 'text-yellow-400', bg: 'bg-yellow-400/10', svg: icons.manychat, frozenAngle: null },
+                    { id: 4, name: 'Clickmax', color: 'text-purple-400', bg: 'bg-purple-400/10', svg: icons.clickmax, frozenAngle: null },
+                    { id: 5, name: 'Nuvemshop', color: 'text-red-500', bg: 'bg-red-500/10', svg: icons.nuvem, frozenAngle: null },
+                    { id: 6, name: 'Converza', color: 'text-cyan-400', bg: 'bg-cyan-400/10', svg: icons.converza, frozenAngle: null },
+                    { id: 7, name: 'Furion', color: 'text-amber-400', bg: 'bg-amber-400/10', svg: icons.furion, frozenAngle: null },
+                    { id: 8, name: 'AI Studio', color: 'text-emerald-400', bg: 'bg-emerald-400/10', svg: icons.studio, frozenAngle: null }
+                ],
+                centerIcon: { id: 9, name: 'Explorar', color: 'text-zinc-500', bg: 'bg-zinc-500/5', svg: `<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>` },
+                rotation: 0, speedInput: 23, radius: window.innerWidth < 768 ? 110 : 180, isManualPause: false, isSwapping: false, hoveredIndex: null, openFaqId: null,
+                faqData: [
+                    { id: 1, icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`, question: "Quanto tempo leva para meu ecossistema ficar pronto?", answer: "O prazo padrão para projetos estratégicos é de 7 dias úteis. Projetos de automação complexa podem exigir um cronograma personalizado." },
+                    { id: 2, icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>`, question: "Eu preciso contratar as ferramentas à parte?", answer: "Sim. Eu indico as melhores opções para o seu volume de operações (Make, n8n ou CRMs)." },
+                    { id: 3, icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>`, question: "Você oferece suporte após a entrega?", answer: "Com certeza. Todos os meus projetos incluem um período de 30 dias de suporte técnico gratuito." },
+                    { id: 4, icon: `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>`, question: "Quais plataformas você consegue integrar?", answer: "Praticamente qualquer uma que possua API ou Webhook: WhatsApp, E-mail, Stripe, CRMs etc." }
+                ],
+                init() {
+                    let lastTime = performance.now();
+                    const animate = (time) => {
+                        const deltaTime = time - lastTime; lastTime = time;
+                        if (!this.isManualPause && !this.isSwapping) {
+                            const multiplier = this.speedInput / 100;
+                            this.rotation += (multiplier * deltaTime * 0.05);
+                        }
+                        requestAnimationFrame(animate);
+                    };
+                    requestAnimationFrame(animate);
+                    window.addEventListener('resize', () => { this.radius = window.innerWidth < 768 ? 110 : 180; });
+                },
+                handleMouseEnter(i) {
+                    if (window.innerWidth < 768) return; 
+                    this.hoveredIndex = i;
+                    const total = this.orbitalIcons.length;
+                    this.orbitalIcons[i].frozenAngle = (i * 360 / total) + this.rotation;
+                },
+                handleMouseLeave(i) { this.hoveredIndex = null; this.orbitalIcons[i].frozenAngle = null; },
+                getOrbitStyle(i) {
+                    const total = this.orbitalIcons.length;
+                    if (this.isSwapping && this.hoveredIndex === i) { return { opacity: 0, transform: 'scale(0.5) translate(0,0)', transition: 'all 0.4s ease-in' }; }
+                    const currentAngle = this.orbitalIcons[i].frozenAngle !== null ? this.orbitalIcons[i].frozenAngle : (i * 360 / total) + this.rotation;
+                    return { transform: `rotate(${currentAngle}deg) translateY(-${this.radius}px) rotate(-${currentAngle}deg)`, zIndex: this.hoveredIndex === i ? 50 : 20, opacity: 1 };
+                },
+                swapIcons(index) {
+                    if (this.isSwapping) return;
+                    this.isSwapping = true;
+                    this.hoveredIndex = index;
+                    setTimeout(() => {
+                        const clickedIcon = { ...this.orbitalIcons[index] };
+                        const currentCenter = { ...this.centerIcon };
+                        currentCenter.frozenAngle = null;
+                        this.centerIcon = clickedIcon;
+                        this.orbitalIcons[index] = currentCenter;
+                        this.isSwapping = false;
+                        this.hoveredIndex = null;
+                    }, 400);
+                }
+            };
+        };
+    </script>
+    <!-- Alpine.js -->
+    <script src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="antialiased" x-data="portfolioApp()" x-cloak>
+
+    <!-- Header Fixo com Blur -->
+    <header class="header-fixed flex justify-between items-center px-6 py-5 md:px-16">
+        <div class="text-xl font-black tracking-tighter">JoãoZanchet<span class="text-accent">.Freelancer</span></div>
+        <nav class="hidden md:flex space-x-8 text-sm font-medium text-gray-400">
+            <a href="#" class="hover:text-white transition">Home</a>
+            <a href="#sobre" class="hover:text-white transition">Sobre Mim</a>
+            <a href="#habilidades" class="hover:text-white transition">Habilidades</a>
+            <a href="#projetos" class="hover:text-white transition">Projetos</a>
+            <a href="#faq" class="hover:text-white transition">FAQ</a>
+            <a href="#contato" class="hover:text-white transition">Contato</a>
+        </nav>
+    </header>
+
+    <!-- Hero -->
+    <section class="px-6 md:px-16 pt-12 md:pt-24 max-w-5xl">
+        <p class="font-mono text-base md:text-lg mb-2">Prazer(); Eu sou</p>
+        <h1 class="text-4xl md:text-7xl font-black text-accent mb-4">João Zanchet</h1>
+        <h2 class="text-xl md:text-4xl font-bold mb-6 md:8 text-white"><span class="border-b-4 border-accent">Microempreendedor | Freelancer</span></h2>
+        <p class="text-gray-400 text-base md:text-xl max-w-2xl mb-6 italic">"Minha bio é simples: Eu uno design estratégico à automação multicanal."</p>
+    </section>
+
+    <!-- Sobre -->
+    <section id="sobre" class="px-6 md:px-16 py-12 md:py-20 grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+        <div>
+            <h2 class="text-2xl md:text-3xl font-black text-accent mb-6 uppercase tracking-widest">Sobre Mim</h2>
+            <p class="text-gray-300 text-base md:text-lg leading-relaxed mb-6">Como empreendedor de coração, acredito que a tecnologia deve trabalhar para o seu negócio. Eu não crio apenas sites; eu construo ecossistemas digitais que operam de forma inteligente.</p>
+            <div class="flex flex-col gap-2"><p class="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Toque e arraste o cartão 3D abaixo</p></div>
+        </div>
+        <div class="relative min-h-[400px] md:min-h-[500px] flex items-center justify-center"><div id="canvas-container"></div></div>
+    </section>
+
+    <!-- Habilidades (Orbit) -->
+    <section id="habilidades" class="relative min-h-[700px] md:min-h-[850px] flex flex-col items-center justify-center py-16 md:py-24 bg-zinc-950/30 overflow-hidden">
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] md:w-[600px] h-[400px] md:h-[600px] rounded-full center-glow" :class="centerIcon.bg ? centerIcon.bg.split('/')[0] : 'bg-blue-900/20'"></div>
+        </div>
+        <div class="z-20 mb-8 md:mb-16 text-center px-6">
+            <h2 class="text-3xl md:text-4xl font-black tracking-tighter uppercase mb-3">Minhas Ferramentas</h2>
+            <p class="text-gray-500 text-[10px] font-bold tracking-[0.4em] uppercase opacity-60">Toque nos ícones para trocá-los</p>
+        </div>
+        <div class="relative flex items-center justify-center w-[280px] h-[280px] md:w-[500px] md:h-[500px] orbit-container">
+            <div class="absolute border border-white/5 rounded-full transition-all duration-700 ease-out" :style="`width: ${radius * 2}px; height: ${radius * 2}px`" :class="hoveredIndex !== null ? 'border-white/20 scale-105' : ''"></div>
+            <div class="z-30 relative transition-all duration-500 ease-in-out" :class="isSwapping ? 'scale-75 blur-sm opacity-50' : 'scale-100 opacity-100'">
+                <div class="absolute inset-0 rounded-[2.5rem] blur-3xl opacity-30 animate-pulse" :class="centerIcon.bg"></div>
+                <div class="relative p-6 md:p-9 bg-zinc-900/80 backdrop-blur-3xl rounded-[2.2rem] md:rounded-[2.5rem] border border-white/10 shadow-2xl overflow-hidden group">
+                    <div x-html="centerIcon.svg" class="w-10 h-10 md:w-20 md:h-20 transition-transform duration-500" :class="centerIcon.color" style="filter: drop-shadow(0 0 15px currentColor);"></div>
+                </div>
+                <div class="absolute -bottom-10 md:-bottom-14 left-1/2 -translate-x-1/2 whitespace-nowrap text-center"><span class="text-accent font-black tracking-[0.2em] uppercase text-[10px] md:text-xs" x-text="centerIcon.name"></span></div>
+            </div>
+            <template x-for="(item, i) in orbitalIcons" :key="item.id">
+                <div class="absolute flex items-center justify-center orbit-item" :style="getOrbitStyle(i)" @mouseenter="handleMouseEnter(i)" @mouseleave="handleMouseLeave(i)" @click="swapIcons(i)">
+                    <div class="relative p-2.5 md:p-4 rounded-xl md:rounded-2xl backdrop-blur-xl border border-white/10 transition-all duration-300 cursor-pointer shadow-xl group" :class="[item.bg, hoveredIndex === i ? 'border-white/40 scale-125' : '']">
+                        <div x-html="item.svg" class="w-5 h-5 md:w-8 md:h-8 transition-all duration-300" :class="[item.color, hoveredIndex === i ? 'animate-bounce-short' : 'opacity-80']"></div>
+                    </div>
+                </div>
+            </template>
+        </div>
+        <div class="z-40 mt-16 md:mt-24 flex items-center gap-4 md:gap-8 px-6 md:px-10 py-4 md:py-5 bg-zinc-900/50 backdrop-blur-2xl border border-white/5 rounded-full scale-90 md:scale-100">
+            <button @click="isManualPause = !isManualPause" class="p-3 md:p-4 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 bg-white/5 text-gray-500" :class="isManualPause ? 'bg-accent text-white shadow-[0_0_20px_rgba(0,17,223,0.4)]' : 'hover:text-white'">
+                <template x-if="isManualPause"><svg class="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></template>
+                <template x-if="!isManualPause"><svg class="w-5 h-5 md:w-6 md:h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg></template>
+            </button>
+            <div class="h-8 md:h-10 w-px bg-white/10"></div>
+            <div class="flex flex-col gap-1 md:gap-2">
+                <div class="flex justify-between items-center"><span class="text-[8px] md:text-[9px] font-black text-gray-500 uppercase tracking-widest">Velocidade</span><span class="text-[9px] md:text-[10px] font-mono text-accent" x-text="speedInput"></span></div>
+                <input type="range" min="5" max="50" x-model="speedInput" class="w-24 md:w-48 cursor-pointer">
+            </div>
+        </div>
+    </section>
+
+    <!-- MEUS PROJETOS (LEQUE) -->
+    <section id="projetos" class="py-24 bg-black overflow-hidden">
+        <div class="max-w-6xl mx-auto px-6 mb-16">
+            <h2 class="text-4xl md:text-6xl font-black uppercase tracking-tighter text-center md:text-left">Meus <span class="text-accent">Projetos</span></h2>
+            <p class="text-zinc-500 text-xs mt-4 uppercase tracking-[0.3em] text-center md:text-left">Passe o mouse (ou toque) para expandir o leque</p>
+        </div>
+        
+        <div class="gallery-container">
+            <div class="cards-wrapper">
+                <!-- Projeto 1 -->
+                <div class="card-proj">
+                    <img src="https://i.imgur.com/YGAi7cU.jpg" alt="BV Confecções">
+                    <div class="card-content-proj">
+                        <h3 class="font-black text-xl text-white uppercase italic">BV Confecções</h3>
+                        <a href="https://preview--bvconfeccoespontepreta.lovable.app/" target="_blank" class="btn-view-proj">Ver Projeto</a>
+                    </div>
+                </div>
+                <!-- Projeto 2 -->
+                <div class="card-proj">
+                    <img src="https://i.imgur.com/K20Wscq.jpg" alt="Sublime">
+                    <div class="card-content-proj">
+                        <h3 class="font-black text-xl text-white uppercase italic">Sublime</h3>
+                        <a href="https://id-preview--6ede901d-3fb8-468f-bc9c-2499cb70b302.lovable.app/" target="_blank" class="btn-view-proj">Explorar</a>
+                    </div>
+                </div>
+                <!-- Projeto 3 (Centro) -->
+                <div class="card-proj">
+                    <img src="https://i.imgur.com/OY4FmWh.jpg" alt="Zanchet Digital">
+                    <div class="card-content-proj">
+                        <h3 class="font-black text-xl text-white uppercase italic">Zanchet Digital</h3>
+                        <a href="https://preview--zanchetdigital.lovable.app/" target="_blank" class="btn-view-proj">Ver Agora</a>
+                    </div>
+                </div>
+                <!-- Projeto 4 -->
+                <div class="card-proj">
+                    <img src="https://i.imgur.com/l4luo2C.jpg" alt="AgroBagual">
+                    <div class="card-content-proj">
+                        <h3 class="font-black text-xl text-white uppercase italic">AgroBagual</h3>
+                        <a href="https://id-preview--d23cb83b-ad18-44f1-83bd-3fa04ea72147.lovable.app/" target="_blank" class="btn-view-proj">Abrir</a>
+                    </div>
+                </div>
+                <!-- Projeto 5 -->
+                <div class="card-proj">
+                    <img src="https://i.imgur.com/bDqvuMI.jpg" alt="Páscoa Mágica">
+                    <div class="card-content-proj">
+                        <h3 class="font-black text-xl text-white uppercase italic">Páscoa Mágica</h3>
+                        <a href="https://id-preview--5d6e5a26-5818-4720-b2ee-166a2c7c9b26.lovable.app/" target="_blank" class="btn-view-proj">Ver Detalhes</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section id="faq" class="py-24 px-6 max-w-4xl mx-auto">
+        <div class="text-center mb-16 space-y-4">
+            <div class="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/10 rounded-full border border-blue-500/20 text-blue-500 text-[10px] font-bold tracking-[0.2em] uppercase">Perguntas Frequentes</div>
+            <h2 class="text-4xl md:text-6xl font-black tracking-tighter uppercase italic">FAQ<span class="text-blue-600">.</span></h2>
+        </div>
+        <div class="grid gap-4">
+            <template x-for="item in faqData" :key="item.id">
+                <div class="group transition-all duration-500 rounded-[1.5rem] overflow-hidden border" :class="openFaqId === item.id ? 'bg-blue-600/5 border-blue-500/30' : 'bg-[#080808] border-white/5'">
+                    <button @click="openFaqId = openFaqId === item.id ? null : item.id" class="w-full p-6 md:p-8 flex items-center justify-between text-left">
+                        <div class="flex items-center gap-4"><div x-html="item.icon" class="text-blue-500"></div><span class="text-lg md:text-xl font-bold transition-colors duration-300" :class="openFaqId === item.id ? 'text-blue-400' : 'text-gray-200'" x-text="item.question"></span></div>
+                        <div class="p-2 rounded-xl" :class="openFaqId === item.id ? 'rotate-180 bg-blue-600 text-white' : 'bg-white/5 text-gray-500'"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg></div>
+                    </button>
+                    <div class="transition-all duration-500 ease-in-out overflow-hidden" :style="openFaqId === item.id ? 'max-height: 400px; opacity: 1;' : 'max-height: 0; opacity: 0;'"><div class="px-6 md:px-8 pb-8 text-gray-400 border-t border-white/5 pt-6"><span x-text="item.answer"></span></div></div>
+                </div>
+            </template>
+        </div>
+    </section>
+
+    <!-- Contato -->
+    <section id="contato" class="px-6 md:px-16 py-16 md:py-32 border-t border-zinc-900">
+        <div class="max-w-4xl mx-auto text-center md:text-left">
+            <h2 class="text-3xl md:text-5xl font-black mb-8 md:12 leading-tight">Vamos construir algo <span class="text-accent">relevante</span> juntos?</h2>
+            <div class="bg-card p-6 md:p-12 rounded-[2rem] md:rounded-[3rem] border border-accent/10">
+                <form class="space-y-4 md:space-y-6" onsubmit="event.preventDefault(); enviarWhatsApp(this);">
+                    <div class="grid md:grid-cols-2 gap-4 md:gap-6">
+                        <div class="space-y-2"><label class="text-[9px] md:text-[10px] uppercase font-black text-gray-500 tracking-widest">Seu Nome</label><input type="text" id="nome" placeholder="Ex: João Silva" class="w-full p-4 md:p-5 rounded-xl bg-zinc-900/50 border border-zinc-800 focus:border-accent outline-none text-white" required></div>
+                        <div class="space-y-2"><label class="text-[9px] md:text-[10px] uppercase font-black text-gray-500 tracking-widest">Seu WhatsApp</label><input type="text" id="whatsapp" placeholder="(00) 00000-0000" class="w-full p-4 md:p-5 rounded-xl bg-zinc-900/50 border border-zinc-800 focus:border-accent outline-none text-white" required></div>
+                    </div>
+                    <div class="space-y-2"><label class="text-[9px] md:text-[10px] uppercase font-black text-gray-500 tracking-widest">Serviço de Interesse</label><select id="interesse" class="w-full p-4 md:p-5 rounded-xl bg-zinc-900/50 border border-zinc-800 focus:border-accent outline-none text-white appearance-none" required><option value="" disabled selected>Selecione uma opção...</option><option value="Site Institucional">Site Institucional</option><option value="Landing Page">Landing Page</option><option value="Automação WhatsApp">Automação WhatsApp</option></select></div>
+                    
+                    <div class="grid md:grid-cols-2 gap-4 pt-4">
+                        <!-- BOTAO SOLICITAR ORÇAMENTO NEON (AZUL) -->
+                        <button type="submit" class="magic-btn-container w-full h-16">
+                            <div class="moving-border border-blue"></div>
+                            <div class="btn-inner-neon inner-blue">
+                                <span class="relative z-10 text-white font-black uppercase tracking-widest text-xs md:text-sm">Solicitar Orçamento</span>
+                            </div>
+                        </button>
+                        
+                        <!-- BOTAO WHATSAPP NEON (VERDE) -->
+                        <a href="https://wa.me/5554991976538" target="_blank" class="magic-btn-container whatsapp-magic w-full h-16 no-underline">
+                            <div class="moving-border border-green"></div>
+                            <div class="btn-inner-neon inner-green">
+                                <div class="relative z-10 flex items-center justify-center gap-3">
+                                    <svg class="w-5 h-5 fill-white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+                                    <span class="text-white font-black uppercase tracking-widest text-[10px] md:text-xs">Falar no WhatsApp</span>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <footer class="px-6 py-12 text-center border-t border-zinc-900">
+        <div class="mb-6 font-black tracking-tighter text-xl">JZ<span class="text-accent">.</span></div>
+        <p class="text-gray-600 text-[8px] uppercase tracking-[0.3em]">© 2026 João Zanchet — Estratégia & Automação.</p>
+    </footer>
+
+    <script>
+        let scene, camera, renderer, card;
+        let isDragging = false, previousMouseX = 0, previousMouseY = 0, velocityX = 0, velocityY = 0;
+        const friction = 0.95;
+
+        function initCard() {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = window.innerWidth < 768 ? 7 : 6;
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+            scene.add(new THREE.AmbientLight(0xffffff, 1.2));
+            const geometry = new THREE.BoxGeometry(2.4, 3.4, 0.08);
+            const loader = new THREE.TextureLoader();
+            const frontURL = 'https://i.imgur.com/uzMTBek.png', backURL = 'https://i.imgur.com/EUbBFSE.png';
+            const frontTexture = loader.load(frontURL), backTexture = loader.load(backURL);
+            backTexture.center.set(0.5, 0.5); backTexture.repeat.set(-1, 1);
+            const mats = [new THREE.MeshBasicMaterial({ color: 0x111111 }), new THREE.MeshBasicMaterial({ color: 0x111111 }), new THREE.MeshBasicMaterial({ color: 0x111111 }), new THREE.MeshBasicMaterial({ color: 0x111111 }), new THREE.MeshBasicMaterial({ map: frontTexture, transparent: true }), new THREE.MeshBasicMaterial({ map: backTexture, transparent: true })];
+            card = new THREE.Mesh(geometry, mats); scene.add(card);
+            setupCardInteractions(container); animateCard();
+        }
+
+        function setupCardInteractions(container) {
+            const onStart = (x, y) => { isDragging = true; velocityX = 0; velocityY = 0; previousMouseX = x; previousMouseY = y; };
+            const onMove = (x, y) => { if (!isDragging || !card) return; const dx = x - previousMouseX, dy = y - previousMouseY; velocityX = dx * 0.012; velocityY = dy * 0.012; card.rotation.y += velocityX; card.rotation.x += velocityY; previousMouseX = x; previousMouseY = y; };
+            container.addEventListener('mousedown', (e) => onStart(e.clientX, e.clientY));
+            window.addEventListener('mouseup', () => isDragging = false);
+            window.addEventListener('mousemove', (e) => onMove(e.clientX, e.clientY));
+        }
+
+        function animateCard() {
+            requestAnimationFrame(animateCard);
+            if (card && !isDragging) { card.rotation.y += velocityX; card.rotation.x += velocityY; velocityX *= friction; velocityY *= friction; if (Math.abs(velocityX) < 0.001) card.rotation.y += 0.004; card.rotation.x *= 0.98; }
+            renderer.render(scene, camera);
+        }
+
+        function enviarWhatsApp(form) {
+            const rect = form.getBoundingClientRect();
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { x: (rect.left + rect.width / 2) / window.innerWidth, y: (rect.top + rect.height / 2) / window.innerHeight },
+                colors: ['#25d366', '#4ade80', '#ffffff']
+            });
+            setTimeout(() => {
+                const msg = `Olá João!%0A*Nome:* ${document.getElementById('nome').value}%0A*Interesse:* ${document.getElementById('interesse').value}`;
+                window.open(`https://wa.me/5554991976538?text=${msg}`, '_blank');
+            }, 600);
+        }
+
+        window.addEventListener('load', initCard);
+    </script>
+</body>
+</html>
